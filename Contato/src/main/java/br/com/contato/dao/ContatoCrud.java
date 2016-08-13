@@ -33,25 +33,28 @@ public class ContatoCrud extends AbstractCrud<Contato> {
 
         try {
             con = getConnection();
-            PreparedStatement stmt = con.prepareStatement(INSERT, 1);
-            stmt.setString(1, obj.getNome());
-            stmt.setString(2, obj.getTelefone());
-            stmt.execute();
+            //Neste ponto estamos criando o objeto statement, porem alem de passarmos o Script de inserção por parametro,
+            //passando também uma constante com o valor '1' para que possamos pegar o ID gerado pelo banco
+            PreparedStatement stmt = con.prepareStatement(INSERT, Statement.RETURN_GENERATED_KEYS);
+            
+            stmt.setString(1, obj.getNome());//setando o parametro de nome
+            stmt.setString(2, obj.getTelefone());//setando o parametro de telefone
+            stmt.execute();//executando nossa inserção
             //Pegando ID gerado pelo banco de dados
-            ResultSet rs = stmt.getGeneratedKeys();
+            ResultSet rs = stmt.getGeneratedKeys();//metodo irá retornar um resultset a ser percorrido
             if (rs.next()) {
-                obj.setId(rs.getInt(1));
+                obj.setId(rs.getInt(1));//devemos pegar o registro que esteja na posição inicial;
             }
-            con.commit();
+            con.commit();//confirmando nossa alteração
         } catch (SQLException ex1) {
-            ex1.printStackTrace();
+            ex1.printStackTrace();// pilha de erros
             try {
-                con.rollback();
+                con.rollback();//desfazendo o que foi feito na base de dados caso der algum problema na execução do insert
             } catch (SQLException ex2) {
-                ex2.printStackTrace();
+                ex2.printStackTrace();//pilha de erros
             }
         }
-        return obj;
+        return obj;//obj ja persistido
     }
 
     @Override
