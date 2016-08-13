@@ -22,25 +22,29 @@ public abstract class AbstractCrud<T> implements Crud<T> {
      * @return connection
      */
     protected Connection getConnection() {
-        if (this.connection == null) {
-            try {
-                Class.forName(FOR_NAME);//carrega classe jdbc do banco de dados
-                connection = DriverManager.getConnection(URL);//cria a conexão
-                Statement statement = connection.createStatement();//cria um statemente para criar o banco
-                statement.executeUpdate(CREATE_DB);//criando o banco de dados
-                close(connection);
-                connection = DriverManager.getConnection(URL);//criando uma nova conexão
-                connection.setAutoCommit(false);//desabilita o autocommit
-            } catch (ClassNotFoundException ex) {
-                ex.printStackTrace();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
+        try {
+            if (this.connection == null || connection.isClosed()) {
                 try {
-                    connection.rollback();
-                } catch (SQLException ex1) {
-                    Logger.getLogger(AbstractCrud.class.getName()).log(Level.SEVERE, null, ex1);
+                    Class.forName(FOR_NAME);//carrega classe jdbc do banco de dados
+                    connection = DriverManager.getConnection(URL);//cria a conexão
+                    Statement statement = connection.createStatement();//cria um statemente para criar o banco
+                    statement.executeUpdate(CREATE_DB);//criando o banco de dados
+                    close(connection);
+                    connection = DriverManager.getConnection(URL);//criando uma nova conexão
+                    connection.setAutoCommit(false);//desabilita o autocommit
+                } catch (ClassNotFoundException ex) {
+                    ex.printStackTrace();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    try {
+                        connection.rollback();
+                    } catch (SQLException ex1) {
+                        Logger.getLogger(AbstractCrud.class.getName()).log(Level.SEVERE, null, ex1);
+                    }
                 }
             }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
         return connection;
     }
