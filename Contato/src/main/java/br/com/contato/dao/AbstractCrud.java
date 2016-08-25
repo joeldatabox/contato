@@ -10,7 +10,9 @@ import java.util.logging.Logger;
 
 public abstract class AbstractCrud<T> implements Crud<T> {
 
-    private static final String CREATE_DB = "CREATE TABLE IF NOT EXISTS contato (id integer primary key autoincrement, nome string, telefone string)";
+    private static final String CREATE_DB = 
+            "CREATE TABLE IF NOT EXISTS contato (id integer primary key autoincrement, nome string, telefone string);"
+            + "CREATE TABLE IF NOT EXISTs endereco(id integer primary key autoincrement, id_contato integer not null, descricao varchar(180));";
     private static final String FOR_NAME = "org.sqlite.JDBC";
     private static final String URL = "jdbc:sqlite:contato.db";
     private Connection connection = null;

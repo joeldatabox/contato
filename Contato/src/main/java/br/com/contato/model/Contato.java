@@ -1,11 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.com.contato.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -17,6 +14,11 @@ public class Contato implements Serializable {
     private Integer id;
     private String nome;
     private String telefone;
+    private List<Endereco> enderecos;
+
+    public Contato() {
+        this.enderecos = new ArrayList<>();
+    }
 
     public Integer getId() {
         return id;
@@ -40,6 +42,18 @@ public class Contato implements Serializable {
 
     public void setTelefone(String telefone) {
         this.telefone = telefone;
+    }
+    
+    public List<Endereco> getEnderecos(){
+        return this.enderecos;
+    }
+    
+    public void addEndereco(Endereco endereco){
+        this.enderecos.add(endereco);
+    }
+    
+    public void addEnderecos(List<Endereco> enderecos){
+        this.enderecos.addAll(enderecos);
     }
 
     @Override
@@ -65,6 +79,11 @@ public class Contato implements Serializable {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "Contato{" + "id=" + id + ", nome=" + nome + ", telefone=" + telefone + ", enderecos=" + enderecos + '}';
     }
 
 }

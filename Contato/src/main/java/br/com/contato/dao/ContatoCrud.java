@@ -1,11 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.com.contato.dao;
 
 import br.com.contato.model.Contato;
+import br.com.contato.model.Endereco;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,9 +19,12 @@ import java.util.logging.Logger;
 public class ContatoCrud extends AbstractCrud<Contato> {
 
     private static final String INSERT = "INSERT INTO contato(nome, telefone) values(?, ?)";
+    private static final String INSERT_ENDERECO = "INSERT INTO endereco(id_contato, descricao) values(?, ?)";
     private static final String UPDATE = "UPDATE contato SET nome = ?, telefone = ? WHERE id = ?";
-    private static final String SELECT = "SELECT * FROM contato";
+    private static final String UPDATE_ENDERECO = "UPDATE endereco SET descricao = ? WHERE id = ? AND id_contato = ?";
+    private static final String SELECT = "SELECT c.id AS c_id, c.nome AS c_nome, c.telefone AS c_telefone, e.id AS e_id, e.descricao  AS e_descricao FROM contato AS c LEFT JOIN endereco AS e ON(e.id_contato = c.id) ORDER BY c.id";
     private static final String DELETE = "DELETE FROM contato WHERE id = ?";
+    private static final String DELETE_ENDERECO = "DELETE FROM endereco WHERE id_contato = ?";
 
     @Override
     public Contato create(Contato obj) {
@@ -36,7 +35,7 @@ public class ContatoCrud extends AbstractCrud<Contato> {
             //Neste ponto estamos criando o objeto statement, porem alem de passarmos o Script de inserção por parametro,
             //passando também uma constante com o valor '1' para que possamos pegar o ID gerado pelo banco
             PreparedStatement stmt = con.prepareStatement(INSERT, Statement.RETURN_GENERATED_KEYS);
-            
+
             stmt.setString(1, obj.getNome());//setando o parametro de nome
             stmt.setString(2, obj.getTelefone());//setando o parametro de telefone
             stmt.execute();//executando nossa inserção
@@ -44,6 +43,18 @@ public class ContatoCrud extends AbstractCrud<Contato> {
             ResultSet rs = stmt.getGeneratedKeys();//metodo irá retornar um resultset a ser percorrido
             if (rs.next()) {
                 obj.setId(rs.getInt(1));//devemos pegar o registro que esteja na posição inicial;
+            }
+            if (obj.getEnderecos() != null) {
+                for (Endereco end : obj.getEnderecos()) {
+                    PreparedStatement endPs = con.prepareStatement(INSERT_ENDERECO, Statement.RETURN_GENERATED_KEYS);
+                    endPs.setInt(1, obj.getId());
+                    endPs.setString(2, end.getDescricao());
+                    endPs.execute();
+                    ResultSet rsEnd = endPs.getGeneratedKeys();
+                    if (rsEnd.next()) {
+                        end.setId(rsEnd.getInt(1));
+                    }
+                }
             }
             con.commit();//confirmando nossa alteração
         } catch (SQLException ex1) {
@@ -68,12 +79,20 @@ public class ContatoCrud extends AbstractCrud<Contato> {
             rs = stmt.executeQuery();//Executando nossa requisição para o banco de dados
             //os registros recebidos precisa ser recebidos um a um percorrendo o resultset
             //o metodos next é responsavel por avançar o indice dos registros a ser lido. No final da pilha ele retorna um false e sai do bloco while
-            while(rs.next()){
-                Contato contato = new Contato();// criando um novo contato para ser adicionado na lista
-                contato.setNome(rs.getString("nome"));// lendo o registro da coluna nome
-                contato.setTelefone(rs.getString("telefone"));//lendo registro da colunao telefone
-                contato.setId(rs.getInt("id"));//lendo o id do registro
-                contatos.add(contato);//adicionando o contato na lista para ser retornado 
+            Contato contato = new Contato();// criando um novo contato para ser adicionado na lista
+            while (rs.next()) {    
+                if (contato.getId() == null || !contato.getId().equals(rs.getInt("c_id"))) {
+                    contato = new Contato();
+                    contato.setId(rs.getInt("c_id"));//lendo o id do registro
+                    contato.setNome(rs.getString("c_nome"));// lendo o registro da coluna nome
+                    contato.setTelefone(rs.getString("c_telefone"));//lendo registro da colunao telefone
+                    contatos.add(contato);//adicionando o contato na lista para ser retornado 
+                }
+                Endereco end = new Endereco();
+                end.setContato(contato);
+                end.setDescricao(rs.getString("e_descricao"));
+                end.setId(rs.getInt("e_id"));
+                contato.addEndereco(end);
             }
         } catch (Exception ex) {
             ex.printStackTrace();//imprimindo a pilha de erros
@@ -98,6 +117,15 @@ public class ContatoCrud extends AbstractCrud<Contato> {
             stmt.setString(2, obj.getTelefone());//setando o parametro telefone
             stmt.setInt(3, obj.getId());//setando o id
             stmt.executeUpdate();//executando o update necessario 
+             if (obj.getEnderecos() != null) {
+                for (Endereco end : obj.getEnderecos()) {
+                    PreparedStatement endPs = con.prepareStatement(UPDATE_ENDERECO);
+                    endPs.setString(1, end.getDescricao());
+                    endPs.setInt(2, end.getId());
+                    endPs.setInt(3, obj.getId());
+                    endPs.executeUpdate();
+                }
+            }
             con.commit();//confirmando nossa movimentação de registros executada
             return true;// devemos confirmar como true quem chemou nosso metodo
         } catch (Exception ex) {
@@ -119,6 +147,9 @@ public class ContatoCrud extends AbstractCrud<Contato> {
         Connection con = null;
         try {
             con = getConnection();
+            PreparedStatement psEnd =con.prepareStatement(DELETE_ENDERECO);
+            psEnd.setInt(1, obj.getId());
+            psEnd.executeUpdate();
             PreparedStatement stmt = con.prepareStatement(DELETE);//criando o objeto preparestatement
             stmt.setInt(1, obj.getId());//setando o parametro relacionado ao id
             stmt.executeUpdate();//executando a alteração
