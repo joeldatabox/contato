@@ -27,6 +27,12 @@ public class Contato implements Serializable {
     public void setId(Integer id) {
         this.id = id;
     }
+    
+    public void setId(String id){
+       if(id != null && !id.isEmpty()){
+           this.id = Integer.valueOf(id);
+       }
+    }
 
     public String getNome() {
         return nome;
