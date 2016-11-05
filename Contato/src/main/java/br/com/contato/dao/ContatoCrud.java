@@ -1,5 +1,6 @@
 package br.com.contato.dao;
 
+import br.com.contato.exception.ContatoException;
 import br.com.contato.model.Contato;
 import br.com.contato.model.Endereco;
 import java.sql.Connection;
@@ -27,10 +28,11 @@ public class ContatoCrud extends AbstractCrud<Contato> {
     private static final String DELETE_ENDERECO = "DELETE FROM endereco WHERE id_contato = ?";
 
     @Override
-    public Contato create(Contato obj) {
+    public Contato create(Contato obj) throws ContatoException {
         Connection con = null;
-
+        
         try {
+            
             con = getConnection();
             //Neste ponto estamos criando o objeto statement, porem alem de passarmos o Script de inserção por parametro,
             //passando também uma constante com o valor '1' para que possamos pegar o ID gerado pelo banco
@@ -63,13 +65,15 @@ public class ContatoCrud extends AbstractCrud<Contato> {
                 con.rollback();//desfazendo o que foi feito na base de dados caso der algum problema na execução do insert
             } catch (SQLException ex2) {
                 ex2.printStackTrace();//pilha de erros
+                throw new ContatoException("Erro ao tentar desfazer inserção!", ex2);
             }
+            throw new ContatoException("Erro ao tentar criar novo registro!", ex1);
         }
         return obj;//obj ja persistido
     }
 
     @Override
-    public List<Contato> read() {
+    public List<Contato> read() throws ContatoException{
         Connection con = null;
         ResultSet rs = null; //Objeto chave valor com resultado vindos de um banco de dados relacional 
         List<Contato> contatos = new ArrayList();// lista de contatos que iremos retornar
@@ -80,7 +84,7 @@ public class ContatoCrud extends AbstractCrud<Contato> {
             //os registros recebidos precisa ser recebidos um a um percorrendo o resultset
             //o metodos next é responsavel por avançar o indice dos registros a ser lido. No final da pilha ele retorna um false e sai do bloco while
             Contato contato = new Contato();// criando um novo contato para ser adicionado na lista
-            while (rs.next()) {    
+            while (rs.next()) {
                 if (contato.getId() == null || !contato.getId().equals(rs.getInt("c_id"))) {
                     contato = new Contato();
                     contato.setId(rs.getInt("c_id"));//lendo o id do registro
@@ -100,7 +104,9 @@ public class ContatoCrud extends AbstractCrud<Contato> {
                 con.rollback();// desfazendo qualquer alteração que realizada no banco
             } catch (SQLException ex1) {
                 ex1.printStackTrace();//imprimindo a pilha de erros
+                throw new ContatoException("Erro ao desfazer alterações!", ex1);
             }
+            throw new ContatoException("Erro ao listar registros!", ex);
         } finally {
             close(rs, con);// fechando a conexão e o resultset
         }
@@ -108,7 +114,7 @@ public class ContatoCrud extends AbstractCrud<Contato> {
     }
 
     @Override
-    public boolean update(Contato obj) {
+    public boolean update(Contato obj) throws ContatoException{
         Connection con = null;
         try {
             con = getConnection();
@@ -117,7 +123,7 @@ public class ContatoCrud extends AbstractCrud<Contato> {
             stmt.setString(2, obj.getTelefone());//setando o parametro telefone
             stmt.setInt(3, obj.getId());//setando o id
             stmt.executeUpdate();//executando o update necessario 
-             if (obj.getEnderecos() != null) {
+            if (obj.getEnderecos() != null) {
                 for (Endereco end : obj.getEnderecos()) {
                     PreparedStatement endPs = con.prepareStatement(UPDATE_ENDERECO);
                     endPs.setString(1, end.getDescricao());
@@ -131,23 +137,23 @@ public class ContatoCrud extends AbstractCrud<Contato> {
         } catch (Exception ex) {
             ex.printStackTrace();//pilha de erros
             try {
-                con.rollback();// desfazendo qualquer problema que pode vim ter acontecido 
-                return false;//se chegamos a este ponto é sinal que deu algum problema, sendo assim devemos retornar o resultado como false
+                con.rollback();// desfazendo qualquer problema que pode vim ter acontecido                 
             } catch (SQLException ex1) {
                 ex1.printStackTrace();// imprime pilha de erros
-                return false;//retorna false
+                throw new ContatoException("Erro ao desfazer alterações!", ex1);
             }
+            throw new ContatoException("Erro ao alterar registro!", ex);
         } finally {
             close(con);//fecha a conexão
         }
     }
 
     @Override
-    public boolean delete(Contato obj) {
+    public boolean delete(Contato obj) throws ContatoException {
         Connection con = null;
         try {
             con = getConnection();
-            PreparedStatement psEnd =con.prepareStatement(DELETE_ENDERECO);
+            PreparedStatement psEnd = con.prepareStatement(DELETE_ENDERECO);
             psEnd.setInt(1, obj.getId());
             psEnd.executeUpdate();
             PreparedStatement stmt = con.prepareStatement(DELETE);//criando o objeto preparestatement
@@ -159,11 +165,11 @@ public class ContatoCrud extends AbstractCrud<Contato> {
             ex.printStackTrace();//pilha de erros
             try {
                 con.rollback();//cancelando as alterações
-                return false;
             } catch (SQLException ex1) {
                 ex1.printStackTrace();//pilha de erros
-                return false;//status
+                throw new ContatoException("Erro ao desfazer alterações!", ex1);
             }
+            throw new ContatoException("Erro ao deletar registro!", ex);
         } finally {
             close(con);//fechado a conexão
         }
