@@ -24,15 +24,16 @@ public class ContatoCrud extends AbstractCrud<Contato> {
     private static final String UPDATE = "UPDATE contato SET nome = ?, telefone = ? WHERE id = ?";
     private static final String UPDATE_ENDERECO = "UPDATE endereco SET descricao = ? WHERE id = ? AND id_contato = ?";
     private static final String SELECT = "SELECT c.id AS c_id, c.nome AS c_nome, c.telefone AS c_telefone, e.id AS e_id, e.descricao  AS e_descricao FROM contato AS c LEFT JOIN endereco AS e ON(e.id_contato = c.id) ORDER BY c.id";
+    private static final String SELECT_FILTRO = "SELECT c.id AS c_id, c.nome AS c_nome,c.telefone AS c_telefone, e.id AS e_id, e.descricao  AS e_descricao FROM contato AS c LEFT JOIN endereco AS e ON(e.id_contato = c.id) WHERE c.id LIKE '%?%' OR c.nome LIKE '%?%' OR c.telefone LIKE '%?%' ORDER BY c.id";
     private static final String DELETE = "DELETE FROM contato WHERE id = ?";
     private static final String DELETE_ENDERECO = "DELETE FROM endereco WHERE id_contato = ?";
 
     @Override
     public Contato create(Contato obj) throws ContatoException {
         Connection con = null;
-        
+
         try {
-            
+
             con = getConnection();
             //Neste ponto estamos criando o objeto statement, porem alem de passarmos o Script de inserção por parametro,
             //passando também uma constante com o valor '1' para que possamos pegar o ID gerado pelo banco
@@ -73,13 +74,25 @@ public class ContatoCrud extends AbstractCrud<Contato> {
     }
 
     @Override
-    public List<Contato> read() throws ContatoException{
+    public List<Contato> read() throws ContatoException {
+        return select(SELECT, null);
+    }
+
+    private List<Contato> select(String query, String filtro) throws ContatoException{
         Connection con = null;
         ResultSet rs = null; //Objeto chave valor com resultado vindos de um banco de dados relacional 
         List<Contato> contatos = new ArrayList();// lista de contatos que iremos retornar
         try {
             con = getConnection();// pegamos uma nova conexao
-            PreparedStatement stmt = con.prepareStatement(SELECT);//criando o objeto preparestatement
+            PreparedStatement stmt;
+            if (filtro != null) {
+                stmt = con.prepareStatement(SELECT_FILTRO);//criando o objeto preparestatement
+                stmt.setString(0, filtro);
+                stmt.setString(1, filtro);
+                stmt.setString(2, filtro);
+            } else {
+                stmt = con.prepareStatement(SELECT);//criando o objeto preparestatement
+            }
             rs = stmt.executeQuery();//Executando nossa requisição para o banco de dados
             //os registros recebidos precisa ser recebidos um a um percorrendo o resultset
             //o metodos next é responsavel por avançar o indice dos registros a ser lido. No final da pilha ele retorna um false e sai do bloco while
@@ -114,7 +127,7 @@ public class ContatoCrud extends AbstractCrud<Contato> {
     }
 
     @Override
-    public boolean update(Contato obj) throws ContatoException{
+    public boolean update(Contato obj) throws ContatoException {
         Connection con = null;
         try {
             con = getConnection();
@@ -173,5 +186,10 @@ public class ContatoCrud extends AbstractCrud<Contato> {
         } finally {
             close(con);//fechado a conexão
         }
+    }
+
+    @Override
+    public List<Contato> read(String filtro) throws ContatoException {
+        return select(SELECT_FILTRO, filtro);
     }
 }
