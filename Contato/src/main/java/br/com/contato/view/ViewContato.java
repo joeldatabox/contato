@@ -4,18 +4,34 @@ import br.com.contato.dao.ContatoCrud;
 import br.com.contato.dao.Crud;
 import br.com.contato.exception.ContatoException;
 import br.com.contato.model.Contato;
+import br.com.contato.model.tablemodel.ContatoTableModel;
 import br.com.contato.view.tools.ViewMessage;
 import br.com.contato.view.tools.ViewTools;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 
 public class ViewContato extends javax.swing.JInternalFrame {
 
     private static ViewContato instance;
     private final Crud<Contato> CRUD;
+    private ContatoTableModel tableModel;
 
     public ViewContato() {
         initComponents();
         this.CRUD = new ContatoCrud();
+        this.jtTabela.setModel(getContatoTableModel());
+    }
+    
+    private ContatoTableModel getContatoTableModel(){
+        if(tableModel == null){
+            try {
+                tableModel = new ContatoTableModel();
+            } catch (ContatoException ex) {
+                ViewMessage.atencao(this, "Erro ao carregar dados do banco de dados!");
+            }
+        }
+        return tableModel;
     }
 
     public static ViewContato getInstance() {
@@ -43,8 +59,9 @@ public class ViewContato extends javax.swing.JInternalFrame {
         jbNovo = new javax.swing.JButton();
         jbSalvar = new javax.swing.JButton();
         jbCancelar = new javax.swing.JButton();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jTable1 = new javax.swing.JTable();
+        jspTabela = new javax.swing.JScrollPane();
+        jtTabela = new javax.swing.JTable();
+        jtfFiltro = new javax.swing.JTextField();
 
         setClosable(true);
         setDefaultCloseOperation(javax.swing.WindowConstants.HIDE_ON_CLOSE);
@@ -77,18 +94,21 @@ public class ViewContato extends javax.swing.JInternalFrame {
 
         jbCancelar.setText("Cancelar");
 
-        jTable1.setModel(new javax.swing.table.DefaultTableModel(
+        jtTabela.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
+
             },
             new String [] {
-                "Title 1", "Title 2", "Title 3", "Title 4"
+
             }
         ));
-        jScrollPane1.setViewportView(jTable1);
+        jspTabela.setViewportView(jtTabela);
+
+        jtfFiltro.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                jtfFiltroKeyPressed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -125,7 +145,9 @@ public class ViewContato extends javax.swing.JInternalFrame {
                                 .addComponent(jbCancelar)
                                 .addContainerGap())))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 423, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(jtfFiltro, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jspTabela, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 423, Short.MAX_VALUE))
                         .addGap(0, 17, Short.MAX_VALUE))))
         );
         layout.setVerticalGroup(
@@ -146,8 +168,10 @@ public class ViewContato extends javax.swing.JInternalFrame {
                     .addComponent(jbNovo)
                     .addComponent(jbSalvar)
                     .addComponent(jbCancelar))
+                .addGap(18, 18, 18)
+                .addComponent(jtfFiltro, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 271, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jspTabela, javax.swing.GroupLayout.PREFERRED_SIZE, 229, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -165,6 +189,14 @@ public class ViewContato extends javax.swing.JInternalFrame {
             ViewMessage.atencao(getInstance(), "O sistema não conseguiu salvar o contato!");
         }
     }//GEN-LAST:event_jbSalvarActionPerformed
+
+    private void jtfFiltroKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jtfFiltroKeyPressed
+        try {
+            getContatoTableModel().setFiltro(jtfFiltro.getText());
+        } catch (ContatoException ex) {
+            ViewMessage.atencao(this, "O sistema não conseguiu preencher a tabela");
+        }
+    }//GEN-LAST:event_jtfFiltroKeyPressed
 
     private boolean salvar(Contato contato) {
         try {
@@ -193,15 +225,16 @@ public class ViewContato extends javax.swing.JInternalFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTable jTable1;
     private javax.swing.JButton jbCancelar;
     private javax.swing.JButton jbNovo;
     private javax.swing.JButton jbSalvar;
     private javax.swing.JLabel jlCodigo;
     private javax.swing.JLabel jlNome;
     private javax.swing.JLabel jlTelefone;
+    private javax.swing.JScrollPane jspTabela;
+    private javax.swing.JTable jtTabela;
     private javax.swing.JTextField jtfCodigo;
+    private javax.swing.JTextField jtfFiltro;
     private javax.swing.JTextField jtfNome;
     private javax.swing.JTextField jtfTelefone;
     // End of variables declaration//GEN-END:variables

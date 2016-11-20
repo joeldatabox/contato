@@ -139,4 +139,9 @@ public class ContatoTableModel extends AbstractTableModel {
                 throw new IndexOutOfBoundsException("columnIndex out of bounds");
         }
     }
+    
+    public void setFiltro(String filtro) throws ContatoException{
+        contatos = crud.read(filtro);
+        fireTableDataChanged();
+    }
 }

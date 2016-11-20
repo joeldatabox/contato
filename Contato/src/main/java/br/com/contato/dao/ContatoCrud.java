@@ -24,7 +24,7 @@ public class ContatoCrud extends AbstractCrud<Contato> {
     private static final String UPDATE = "UPDATE contato SET nome = ?, telefone = ? WHERE id = ?";
     private static final String UPDATE_ENDERECO = "UPDATE endereco SET descricao = ? WHERE id = ? AND id_contato = ?";
     private static final String SELECT = "SELECT c.id AS c_id, c.nome AS c_nome, c.telefone AS c_telefone, e.id AS e_id, e.descricao  AS e_descricao FROM contato AS c LEFT JOIN endereco AS e ON(e.id_contato = c.id) ORDER BY c.id";
-    private static final String SELECT_FILTRO = "SELECT c.id AS c_id, c.nome AS c_nome,c.telefone AS c_telefone, e.id AS e_id, e.descricao  AS e_descricao FROM contato AS c LEFT JOIN endereco AS e ON(e.id_contato = c.id) WHERE c.id LIKE '%?%' OR c.nome LIKE '%?%' OR c.telefone LIKE '%?%' ORDER BY c.id";
+    private static final String SELECT_FILTRO = "SELECT c.id AS c_id, c.nome AS c_nome,c.telefone AS c_telefone, e.id AS e_id, e.descricao  AS e_descricao FROM contato AS c LEFT JOIN endereco AS e ON(e.id_contato = c.id) WHERE c.id LIKE ? OR c.nome LIKE ? OR c.telefone LIKE ? ORDER BY c.id";
     private static final String DELETE = "DELETE FROM contato WHERE id = ?";
     private static final String DELETE_ENDERECO = "DELETE FROM endereco WHERE id_contato = ?";
 
@@ -86,12 +86,13 @@ public class ContatoCrud extends AbstractCrud<Contato> {
             con = getConnection();// pegamos uma nova conexao
             PreparedStatement stmt;
             if (filtro != null) {
-                stmt = con.prepareStatement(SELECT_FILTRO);//criando o objeto preparestatement
-                stmt.setString(0, filtro);
-                stmt.setString(1, filtro);
-                stmt.setString(2, filtro);
+                stmt = con.prepareStatement(query);//criando o objeto preparestatement
+
+                stmt.setString(1, "'%" + filtro + "%'");
+                stmt.setString(2, "'%" + filtro + "%'");
+                stmt.setString(3, "'%" + filtro + "%'");
             } else {
-                stmt = con.prepareStatement(SELECT);//criando o objeto preparestatement
+                stmt = con.prepareStatement(query);//criando o objeto preparestatement
             }
             rs = stmt.executeQuery();//Executando nossa requisição para o banco de dados
             //os registros recebidos precisa ser recebidos um a um percorrendo o resultset
@@ -190,6 +191,9 @@ public class ContatoCrud extends AbstractCrud<Contato> {
 
     @Override
     public List<Contato> read(String filtro) throws ContatoException {
+        if(filtro != null && filtro.trim().isEmpty()){
+            return select(SELECT, null);
+        }
         return select(SELECT_FILTRO, filtro);
     }
 }
